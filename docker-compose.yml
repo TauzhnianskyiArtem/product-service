@@ -1,0 +1,41 @@
+version: '3.9'
+
+services:
+  product-service:
+    image: product-service
+    build:
+      dockerfile: Dockerfile
+    container_name: product-service
+    ports:
+      - "8080:8080"
+      - "8443:8443"
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: postgres-container
+    image: postgres:15-alpine3.18
+    environment:
+      - POSTGRES_USER=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DATABASE}
+    volumes:
+      - ./product-db-data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+    container_name: pgadmin_container
+    ports:
+      - "8888:80"
+    depends_on:
+      - postgres
+
+#  user-profile:
+#    image: ghcr.io/iprody/user-profile:latest
+#    container_name: user-profile-service
+
