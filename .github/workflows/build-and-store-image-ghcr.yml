@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: iPrody-Devs-Gr0000000007-product-service
+  IMAGE_NAME: iprody/iPrody-Devs-Gr0000000007-product-service
 
 jobs:
   build-and-push-image:
@@ -53,8 +53,8 @@ jobs:
         uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: latest
-
+          tags: |
+            type=raw,value=latest
       - name: Build and push Docker image
         id: build-and-push
         uses: docker/build-push-action@v4

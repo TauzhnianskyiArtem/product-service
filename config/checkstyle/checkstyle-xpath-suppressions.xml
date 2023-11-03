@@ -5,6 +5,7 @@
         "https://checkstyle.org/dtds/suppressions_1_2_xpath_experimental.dtd">
 
 <suppressions>
-<!--     disable checks against lombok annotations -->
-        <suppress-xpath checks="HideUtilityClassConstructor" query="//CLASS_DEF[.//ANNOTATION/IDENT[@text='FieldDefaults']]"/>
+    <!--     disable checks against lombok annotations -->
+    <suppress-xpath checks="HideUtilityClassConstructor"
+                    query="//CLASS_DEF[.//ANNOTATION/IDENT[@text='FieldDefaults']]"/>
 </suppressions>

@@ -1,4 +1,4 @@
-package com.iprody.productservice;
+package com.iprody.product.service;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

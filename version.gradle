@@ -1,0 +1,7 @@
+ext {
+    versions = [
+            'mapstruct'     : '1.5.5.Final',
+            'lombok'        : '1.18.30',
+            'testContainers': '1.19.1'
+    ]
+}

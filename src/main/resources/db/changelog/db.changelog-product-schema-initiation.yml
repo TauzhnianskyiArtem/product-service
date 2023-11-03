@@ -1,0 +1,198 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: atauzhnianskyi
+      changes:
+        - createTable:
+            tableName: discount
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: SMALLINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_from
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: valid_until
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addDefaultValue:
+            columnName: updated_at
+            tableName: discount
+            defaultValueComputed: now()
+        - addDefaultValue:
+            columnName: created_at
+            tableName: discount
+            defaultValueComputed: now()
+  - changeSet:
+      id: 2
+      author: atauzhnianskyi
+      changes:
+        - createTable:
+            tableName: currency
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: VARCHAR(3)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addDefaultValue:
+            columnName: updated_at
+            tableName: currency
+            defaultValueComputed: now()
+        - addDefaultValue:
+            columnName: created_at
+            tableName: currency
+            defaultValueComputed: now()
+        - sql:
+            sql: ALTER TABLE currency ADD CONSTRAINT value_enum_check CHECK(value in ('USD','EUR'))
+
+  - changeSet:
+      id: 3
+      author: atauzhnianskyi
+      changes:
+        - createTable:
+            tableName: price
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: value
+                  type: NUMERIC(5, 2)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: currency_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: price
+            baseColumnNames: currency_id
+            constraintName: fk_price_currency_id
+            referencedTableName: currency
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addDefaultValue:
+            columnName: updated_at
+            tableName: price
+            defaultValueComputed: now()
+        - addDefaultValue:
+            columnName: created_at
+            tableName: price
+            defaultValueComputed: now()
+  - changeSet:
+      id: 4
+      author: atauzhnianskyi
+      changes:
+        - createTable:
+            tableName: product
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: name
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: active
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: price_id
+                  type: BIGINT
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: discount_id
+                  type: BIGINT
+                  constraints:
+                    unique: true
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: product
+            baseColumnNames: discount_id
+            constraintName: fk_product_discount_id
+            referencedTableName: discount
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addForeignKeyConstraint:
+            baseTableName: product
+            baseColumnNames: price_id
+            constraintName: fk_product_price_id
+            referencedTableName: price
+            referencedColumnNames: id
+            onDelete: CASCADE
+        - addDefaultValue:
+            columnName: updated_at
+            tableName: product
+            defaultValueComputed: now()
+        - addDefaultValue:
+            columnName: created_at
+            tableName: product
+            defaultValueComputed: now()
+

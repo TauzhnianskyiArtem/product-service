@@ -11,7 +11,7 @@ RUN gradle build
 
 FROM amazoncorretto:21-alpine
 
-COPY --from=builder app/build/libs/*.jar app.jar
+COPY --from=builder app/build/libs/*-exec.jar *-exec.jar
 
 EXPOSE 8080 8443
 ENTRYPOINT ["java", "-jar", "app.jar"]

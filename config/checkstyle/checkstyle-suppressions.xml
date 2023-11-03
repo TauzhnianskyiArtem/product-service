@@ -8,4 +8,6 @@
     <suppress checks="JavadocVariable" files="[A-Z][a-zA-Z0-9]*Test.java|Test[A-Z][a-zA-Z0-9]*.java"/>
     <suppress checks="MethodName" files="[A-Z][a-zA-Z0-9]*Test.java|Test[A-Z][a-zA-Z0-9]*.java"/>
     <suppress checks="HideUtilityClassConstructor" files="[A-Z][a-zA-Z0-9]*Application.java"/>
+    <suppress checks="MagicNumber" files="[A-Z][a-zA-Z0-9]*Test.java|Test[A-Z][a-zA-Z0-9]*.java"/>
+    <suppress checks="MultipleStringLiterals" files="[A-Z][a-zA-Z0-9]*Test.java|Test[A-Z][a-zA-Z0-9]*.java"/>
 </suppressions>
