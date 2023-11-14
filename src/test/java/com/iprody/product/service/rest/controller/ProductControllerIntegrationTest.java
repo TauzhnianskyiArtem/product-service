@@ -20,6 +20,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultMatcher;
@@ -50,6 +51,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
 
     public static final String URL_PRODUCT_CONTROLLER = "/api/v1/products";
+
+    private static final String EXCEPTION_MESSAGE = "$.message";
+    private static final String EXCEPTION_STATUS = "$.status";
+    private static final String EXCEPTION_DETAILS = "$.details";
+
+    private static final String VALIDATION_EXCEPTION_MESSAGE = "Request validation error occurred";
+    private static final String NOT_FOUND_EXCEPTION_MESSAGE = "Resource was not found";
 
     private static final ProductResponseDto FIRST_EXISTING_PRODUCT_DTO_FROM_DB = ProductResponseDto.builder()
             .id(1L)
@@ -128,7 +136,7 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                 .name(null)
                 .active(false)
                 .price(null)
-                .currency(null)
+                .currency(CurrencyValue.USD)
                 .build();
 
         mockMvc.perform(
@@ -136,7 +144,12 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(notValidProductDto))
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        jsonPath(EXCEPTION_MESSAGE).value(VALIDATION_EXCEPTION_MESSAGE),
+                        jsonPath(EXCEPTION_STATUS).value(HttpStatus.BAD_REQUEST.value())
+                );
     }
 
     @SneakyThrows
@@ -212,6 +225,25 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
 
     @SneakyThrows
     @Test
+    void shouldUpdateProductWithNotExistIdFail() {
+        final long notExistId = 100L;
+        mockMvc.perform(
+                        put(URL_PRODUCT_CONTROLLER + "/{id}", notExistId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(TEST_PRODUCT_CREATE_DTO))
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        jsonPath(EXCEPTION_MESSAGE).value(NOT_FOUND_EXCEPTION_MESSAGE),
+                        jsonPath(EXCEPTION_STATUS).value(HttpStatus.NOT_FOUND.value()),
+                        jsonPath(EXCEPTION_DETAILS).value("Product not found with id: " + notExistId)
+                );
+    }
+
+
+    @SneakyThrows
+    @Test
     void shouldFindByIdProductSuccess() {
         mockMvc.perform(
                         get(URL_PRODUCT_CONTROLLER + "/{id}", THIRD_EXISTING_PRODUCT_DTO_FROM_DB.id())
@@ -227,6 +259,22 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                                 .value(THIRD_EXISTING_PRODUCT_DTO_FROM_DB.price().currency().value()),
                         jsonPath("$.createdAt").isNotEmpty(),
                         jsonPath("$.updatedAt").isNotEmpty()
+                );
+    }
+
+    @SneakyThrows
+    @Test
+    void shouldFindByIdWithNotExistIdFail() {
+        final long notExistId = 100L;
+        mockMvc.perform(
+                        get(URL_PRODUCT_CONTROLLER + "/{id}", notExistId)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        jsonPath(EXCEPTION_MESSAGE).value(NOT_FOUND_EXCEPTION_MESSAGE),
+                        jsonPath(EXCEPTION_STATUS).value(HttpStatus.NOT_FOUND.value()),
+                        jsonPath(EXCEPTION_DETAILS).value("Product not found with id: " + notExistId)
                 );
     }
 
@@ -268,7 +316,7 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpectAll(
                         jsonPath("$.id").value(FIRST_EXISTING_PRODUCT_DTO_FROM_DB.id()),
-                        jsonPath("$.discount.value").value((int) TEST_DISCOUNT_CREATE_DTO.value()),
+                        jsonPath("$.discount.value").value(TEST_DISCOUNT_CREATE_DTO.value()),
                         jsonPath("$.discount.from")
                                 .value(TEST_DISCOUNT_CREATE_DTO.from().atOffset(ZoneOffset.UTC).format(ISO_INSTANT)),
                         jsonPath("$.discount.until")
@@ -293,7 +341,31 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(invalidDiscount))
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        jsonPath(EXCEPTION_MESSAGE).value(VALIDATION_EXCEPTION_MESSAGE),
+                        jsonPath(EXCEPTION_STATUS).value(HttpStatus.BAD_REQUEST.value())
+                );
+    }
+
+    @SneakyThrows
+    @Test
+    void shouldApplyDiscountForOneProductWithNotExistProductIdFail() {
+        final long notExistProductId = 100L;
+        mockMvc.perform(
+                        post(URL_PRODUCT_CONTROLLER + "/{id}/discounts",
+                                notExistProductId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(TEST_DISCOUNT_CREATE_DTO))
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        jsonPath(EXCEPTION_MESSAGE).value(NOT_FOUND_EXCEPTION_MESSAGE),
+                        jsonPath(EXCEPTION_STATUS).value(HttpStatus.NOT_FOUND.value()),
+                        jsonPath(EXCEPTION_DETAILS).value("Product not found with id: " + notExistProductId)
+                );
     }
 
     @SneakyThrows
@@ -308,12 +380,12 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpectAll(
                         jsonPath("$", hasSize(2)),
-                        jsonPath("$[0].discount.value").value((int) TEST_DISCOUNT_CREATE_DTO.value()),
+                        jsonPath("$[0].discount.value").value(TEST_DISCOUNT_CREATE_DTO.value()),
                         jsonPath("$[0].discount.from")
                                 .value(TEST_DISCOUNT_CREATE_DTO.from().atOffset(ZoneOffset.UTC).format(ISO_INSTANT)),
                         jsonPath("$[0].discount.until")
                                 .value(TEST_DISCOUNT_CREATE_DTO.until().atOffset(ZoneOffset.UTC).format(ISO_INSTANT)),
-                        jsonPath("$[1].discount.value").value((int) TEST_DISCOUNT_CREATE_DTO.value()),
+                        jsonPath("$[1].discount.value").value(TEST_DISCOUNT_CREATE_DTO.value()),
                         jsonPath("$[1].discount.from")
                                 .value(TEST_DISCOUNT_CREATE_DTO.from().atOffset(ZoneOffset.UTC).format(ISO_INSTANT)),
                         jsonPath("$[1].discount.until")
@@ -339,7 +411,12 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(testDiscountForProducts))
                 )
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        jsonPath(EXCEPTION_MESSAGE).value(VALIDATION_EXCEPTION_MESSAGE),
+                        jsonPath(EXCEPTION_STATUS).value(HttpStatus.BAD_REQUEST.value())
+                );
     }
 
     @SneakyThrows
@@ -357,6 +434,22 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                 .andExpectAll(
                         jsonPath("$.id").value(FIRST_EXISTING_PRODUCT_DTO_FROM_DB.id()),
                         jsonPath("$.discount").isEmpty()
+                );
+    }
+
+    @SneakyThrows
+    @Test
+    void shouldDeactivateDiscountForOneProductWithNotExistProductId() {
+        final long notExistProductId = 100L;
+        mockMvc.perform(
+                        delete(URL_PRODUCT_CONTROLLER + "/{id}/discounts", notExistProductId)
+                )
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        jsonPath(EXCEPTION_MESSAGE).value(NOT_FOUND_EXCEPTION_MESSAGE),
+                        jsonPath(EXCEPTION_STATUS).value(HttpStatus.NOT_FOUND.value()),
+                        jsonPath(EXCEPTION_DETAILS).value("Product not found with id: " + notExistProductId)
                 );
     }
 
