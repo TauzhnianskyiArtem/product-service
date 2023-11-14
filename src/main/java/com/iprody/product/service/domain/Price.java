@@ -45,7 +45,7 @@ public class Price extends AbstractBaseEntity {
     /**
      * Price have currency_id FK that references currency.id.
      */
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
     @JoinColumn(name = "currency_id")
     private Currency currency;
 }

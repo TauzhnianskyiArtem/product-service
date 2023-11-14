@@ -10,10 +10,13 @@ import com.iprody.product.service.domain.ProductFilter;
 import com.iprody.product.service.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.assertj.core.api.SoftAssertions;
+import org.assertj.core.api.junit.jupiter.SoftAssertionsExtension;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 
@@ -22,19 +25,18 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static com.iprody.product.service.exception.ResourceNotFoundException.NOT_FOUND_WITH_ID_MESSAGE;
 import static com.iprody.product.service.service.ProductService.PRODUCT_DOMAIN_NAME;
 import static com.iprody.product.service.util.SortingProductProperties.ACTIVE;
 import static com.iprody.product.service.util.SortingProductProperties.NAME;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.params.provider.Arguments.of;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true)
+@ExtendWith(SoftAssertionsExtension.class)
 class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
 
     private static final Long FIRST_EXISTING_PRODUCT_ID_FROM_DB = 1L;
@@ -58,13 +60,14 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
             .active(true)
             .price(Price.builder().value(BigDecimal.valueOf(10L))
                     .currency(Currency.builder()
+                            .id(1L)
                             .value(CurrencyValue.USD)
                             .build())
                     .build())
             .build();
 
     private static final Discount TEST_DISCOUNT = Discount.builder()
-            .value((short) 10)
+            .value(10)
             .validFrom(Instant.now())
             .validUntil(Instant.now().plusSeconds(1000))
             .build();
@@ -72,165 +75,46 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
 
     private ProductService productService;
 
+    @Order(1)
     @Test
-    void shouldCreateProductSuccess() {
+    void shouldCreateProductSuccess(SoftAssertions softly) {
 
-        final Product actualProduct = productService.createProduct(TEST_PRODUCT_CREATE);
+        final Product actualProduct = productService.saveProduct(TEST_PRODUCT_CREATE);
 
-
-        assertSoftly(softAssertions -> {
-            softAssertions.assertThat(actualProduct.getId()).isNotZero();
-            softAssertions.assertThat(actualProduct.getName()).isEqualTo(TEST_PRODUCT_CREATE.getName());
-            softAssertions.assertThat(actualProduct.isActive()).isTrue();
-            softAssertions.assertThat(actualProduct.getPrice().getCurrency().getValue()).isEqualTo(CurrencyValue.USD);
-            softAssertions.assertThat(actualProduct.getPrice().getValue())
-                    .isEqualTo(TEST_PRODUCT_CREATE.getPrice().getValue());
-            softAssertions.assertThat(actualProduct.getCreatedAt()).isNotNull();
-            softAssertions.assertThat(actualProduct.getUpdatedAt()).isNotNull();
-        });
+        softly.assertThat(actualProduct.getId()).isNotZero();
+        softly.assertThat(actualProduct.getName()).isEqualTo(TEST_PRODUCT_CREATE.getName());
+        softly.assertThat(actualProduct.isActive()).isTrue();
+        softly.assertThat(actualProduct.getPrice())
+                .extracting("currency")
+                .extracting("value")
+                .isEqualTo(CurrencyValue.USD);
+        softly.assertThat(actualProduct.getPrice())
+                .extracting("value")
+                .isEqualTo(TEST_PRODUCT_CREATE.getPrice().getValue());
+        softly.assertThat(actualProduct.getCreatedAt()).isNotNull();
+        softly.assertThat(actualProduct.getUpdatedAt()).isNotNull();
 
     }
 
-    @ParameterizedTest
-    @MethodSource("provideForUpdateProduct")
-    void shouldUpdateProductSuccess(Product updateProduct, ProductAssertions productAssertions) {
-
-        final Product actualProduct = productService.updateProduct(FIRST_EXISTING_PRODUCT_ID_FROM_DB, updateProduct);
-
-        productAssertions.assertActual(actualProduct);
-    }
-
-    private static Stream<Arguments> provideForUpdateProduct() {
-        return Stream.of(
-                of(TEST_PRODUCT_CREATE,
-                        (ProductAssertions) actualProduct -> {
-                            final var expectedProduct = TEST_PRODUCT_CREATE;
-
-                            assertSoftly(softAssertions -> {
-                                softAssertions.assertThat(actualProduct.getId())
-                                        .isEqualTo(FIRST_EXISTING_PRODUCT_ID_FROM_DB);
-                                softAssertions.assertThat(actualProduct.getName()).isEqualTo(expectedProduct.getName());
-                                softAssertions.assertThat(actualProduct.isActive())
-                                        .isEqualTo(expectedProduct.isActive());
-                                softAssertions.assertThat(actualProduct.getPrice().getCurrency().getValue())
-                                        .isEqualTo(expectedProduct.getPrice().getCurrency().getValue());
-                                softAssertions.assertThat(actualProduct.getPrice().getValue())
-                                        .isEqualTo(expectedProduct.getPrice().getValue());
-                                softAssertions.assertThat(actualProduct.getCreatedAt()).isNotNull();
-                                softAssertions.assertThat(actualProduct.getUpdatedAt()).isNotNull();
-                            });
-                        },
-                        TEST_PRODUCT_CREATE), // Update full product
-
-                of(Product.builder()
-                                .active(false)
-                                .price(Price.builder().value(BigDecimal.valueOf(100L))
-                                        .currency(Currency.builder()
-                                                .value(CurrencyValue.USD)
-                                                .build())
-                                        .build())
-                                .build(),
-                        (ProductAssertions) actualProduct -> {
-                            final var expectedProduct = Product.builder()
-                                    .active(false)
-                                    .price(Price.builder().value(BigDecimal.valueOf(100L))
-                                            .currency(Currency.builder()
-                                                    .value(CurrencyValue.USD)
-                                                    .build())
-                                            .build())
-                                    .build();
-
-                            assertSoftly(softAssertions -> {
-                                softAssertions.assertThat(actualProduct.getId())
-                                        .isEqualTo(FIRST_EXISTING_PRODUCT_ID_FROM_DB);
-                                softAssertions.assertThat(actualProduct.isActive())
-                                        .isEqualTo(expectedProduct.isActive());
-                                softAssertions.assertThat(actualProduct.getPrice().getCurrency().getValue())
-                                        .isEqualTo(expectedProduct.getPrice().getCurrency().getValue());
-                                softAssertions.assertThat(actualProduct.getPrice().getValue())
-                                        .isEqualTo(expectedProduct.getPrice().getValue());
-                                softAssertions.assertThat(actualProduct.getCreatedAt()).isNotNull();
-                                softAssertions.assertThat(actualProduct.getUpdatedAt()).isNotNull();
-                            });
-                        }), // Update product without name
-                of(Product.builder()
-                                .name("Product without Price")
-                                .active(true)
-                                .build(),
-                        (ProductAssertions) actualProduct -> {
-                            final var expectedProduct = Product.builder()
-                                    .name("Product without Price")
-                                    .active(true)
-                                    .build();
-
-                            assertSoftly(softAssertions -> {
-                                softAssertions.assertThat(actualProduct.getId())
-                                        .isEqualTo(FIRST_EXISTING_PRODUCT_ID_FROM_DB);
-                                softAssertions.assertThat(actualProduct.isActive())
-                                        .isEqualTo(expectedProduct.isActive());
-                                softAssertions.assertThat(actualProduct.getName()).isEqualTo(expectedProduct.getName());
-                                softAssertions.assertThat(actualProduct.getCreatedAt()).isNotNull();
-                                softAssertions.assertThat(actualProduct.getUpdatedAt()).isNotNull();
-                            });
-                        }), // Update product without price
-                of(Product.builder()
-                                .name("New Name")
-                                .active(false)
-                                .price(Price.builder().value(BigDecimal.valueOf(100L))
-                                        .currency(Currency.builder().value(CurrencyValue.EUR).build()).build())
-                                .build(),
-                        (ProductAssertions) actualProduct -> {
-                            final var expectedProduct = Product.builder()
-                                    .name("New Name")
-                                    .active(false)
-                                    .price(Price.builder().value(BigDecimal.valueOf(100L))
-                                            .currency(Currency.builder().value(CurrencyValue.EUR).build()).build())
-                                    .build();
-
-                            assertSoftly(softAssertions -> {
-                                softAssertions.assertThat(actualProduct.getId())
-                                        .isEqualTo(FIRST_EXISTING_PRODUCT_ID_FROM_DB);
-                                softAssertions.assertThat(actualProduct.getName()).isEqualTo(expectedProduct.getName());
-                                softAssertions.assertThat(actualProduct.isActive())
-                                        .isEqualTo(expectedProduct.isActive());
-                                softAssertions.assertThat(actualProduct.getPrice().getCurrency().getValue())
-                                        .isEqualTo(expectedProduct.getPrice().getCurrency().getValue());
-                                softAssertions.assertThat(actualProduct.getCreatedAt()).isNotNull();
-                                softAssertions.assertThat(actualProduct.getUpdatedAt()).isNotNull();
-                            });
-                        })); // Update product with price, bur not have price value
-    }
-
-
+    @Order(2)
     @Test
-    void shouldUpdateProductWithNonExistIdFail() {
-
-        final long nonExistId = 100L;
-        final ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
-                productService.updateProduct(nonExistId, TEST_PRODUCT_CREATE));
-
-        assertThat(exception.getMessage()).isEqualTo(NOT_FOUND_WITH_ID_MESSAGE
-                .formatted(PRODUCT_DOMAIN_NAME, nonExistId));
-    }
-
-
-    @Test
-    void shouldFindByIdProductSuccess() {
+    void shouldFindByIdProductSuccess(SoftAssertions softly) {
 
         final Product actualProduct = productService.findById(SECOND_EXISTING_PRODUCT_FROM_DB.getId());
 
-        assertSoftly(softAssertions -> {
-            softAssertions.assertThat(actualProduct.getId()).isEqualTo(SECOND_EXISTING_PRODUCT_FROM_DB.getId());
-            softAssertions.assertThat(actualProduct.getName()).isEqualTo(SECOND_EXISTING_PRODUCT_FROM_DB.getName());
-            softAssertions.assertThat(actualProduct.getPrice().getCurrency().getValue())
-                    .isEqualTo(SECOND_EXISTING_PRODUCT_FROM_DB.getPrice().getCurrency().getValue());
-            softAssertions.assertThat(actualProduct.getPrice().getValue())
-                    .isEqualByComparingTo(SECOND_EXISTING_PRODUCT_FROM_DB.getPrice().getValue());
-            softAssertions.assertThat(actualProduct.getCreatedAt()).isNotNull();
-            softAssertions.assertThat(actualProduct.getUpdatedAt()).isNotNull();
-        });
+        softly.assertThat(actualProduct.getId()).isEqualTo(SECOND_EXISTING_PRODUCT_FROM_DB.getId());
+        softly.assertThat(actualProduct.getName()).isEqualTo(SECOND_EXISTING_PRODUCT_FROM_DB.getName());
+        softly.assertThat(actualProduct.getPrice())
+                .extracting("currency")
+                .extracting("value")
+                .isEqualTo(SECOND_EXISTING_PRODUCT_FROM_DB.getPrice().getCurrency().getValue());
+        softly.assertThat(actualProduct.getPrice().getValue())
+                .isEqualByComparingTo(SECOND_EXISTING_PRODUCT_FROM_DB.getPrice().getValue());
+        softly.assertThat(actualProduct.getCreatedAt()).isNotNull();
+        softly.assertThat(actualProduct.getUpdatedAt()).isNotNull();
     }
 
+    @Order(3)
     @Test
     void shouldFindProductByIdWithNonExistIdFail() {
 
@@ -243,8 +127,9 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
     }
 
 
+    @Order(4)
     @Test
-    void shouldFindAllProductsWithDefinePageableSuccess() {
+    void shouldFindAllProductsWithDefinePageableSuccess(SoftAssertions softly) {
 
         final String byName = "Test";
         final ProductFilter productFilter = ProductFilter.builder()
@@ -256,22 +141,20 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
 
         final Page<Product> actualProducts = productService.findAll(productFilter);
 
-
-        assertSoftly(softAssertions -> {
-            softAssertions.assertThat(actualProducts).allSatisfy(product -> {
-                assertThat(product.isActive()).isTrue();
-                assertThat(product.getName().indexOf(byName)).isNotEqualTo(-1);
-            });
-            softAssertions.assertThat(actualProducts.getContent()).hasSize(1);
-            softAssertions.assertThat(actualProducts.getPageable().getPageSize()).isEqualTo(1);
-            softAssertions.assertThat(actualProducts.getPageable().getPageNumber()).isZero();
-            softAssertions.assertThat(actualProducts.getPageable().getSort().getOrderFor(NAME_COLUMN))
-                    .isEqualTo(Sort.Order.desc(NAME_COLUMN));
+        softly.assertThat(actualProducts).allSatisfy(product -> {
+            assertThat(product.isActive()).isTrue();
+            assertThat(product.getName().indexOf(byName)).isNotEqualTo(-1);
         });
+        softly.assertThat(actualProducts.getContent()).hasSize(1);
+        softly.assertThat(actualProducts.getPageable()).extracting("pageSize").isEqualTo(1);
+        softly.assertThat(actualProducts.getPageable()).extracting("pageNumber").isEqualTo(0);
+        softly.assertThat(actualProducts.getPageable().getSort().getOrderFor(NAME_COLUMN))
+                .isEqualTo(Sort.Order.desc(NAME_COLUMN));
     }
 
+    @Order(5)
     @Test
-    void shouldFindAllProductsByActiveSuccess() {
+    void shouldFindAllProductsByActiveSuccess(SoftAssertions softly) {
 
         final ProductFilter productFilter = ProductFilter.builder()
                 .active(false)
@@ -280,14 +163,13 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
 
         final Page<Product> actualProducts = productService.findAll(productFilter);
 
-        assertSoftly(softAssertions -> {
-            softAssertions.assertThat(actualProducts.getContent()).isEmpty();
-            softAssertions.assertThat(actualProducts.getPageable().getSort()).isEqualTo(Sort.unsorted());
-        });
+        softly.assertThat(actualProducts.getContent()).isEmpty();
+        softly.assertThat(actualProducts.getPageable()).extracting("sort").isEqualTo(Sort.unsorted());
     }
 
+    @Order(6)
     @Test
-    void shouldFindAllProductsWithOnlySortingSuccess() {
+    void shouldFindAllProductsWithOnlySortingSuccess(SoftAssertions softly) {
 
         final ProductFilter productFilter = ProductFilter.builder()
                 .sort(new ProductFilter.SortRequest(Set.of(NAME, ACTIVE), Sort.Direction.ASC))
@@ -296,36 +178,44 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
 
         final Page<Product> actualProducts = productService.findAll(productFilter);
 
-        assertSoftly(softAssertions -> {
-            softAssertions.assertThat(actualProducts.getContent()).hasSize(2);
-            softAssertions.assertThat(actualProducts.getPageable().getPageSize()).isEqualTo(2);
-            softAssertions.assertThat(actualProducts.getPageable().getPageNumber()).isZero();
-            softAssertions.assertThat(actualProducts.getPageable().getSort().getOrderFor(NAME_COLUMN))
-                    .isEqualTo(Sort.Order.asc(NAME_COLUMN));
-            softAssertions.assertThat(actualProducts.getPageable().getSort().getOrderFor(ACTIVE_COLUMN))
-                    .isEqualTo(Sort.Order.asc(ACTIVE_COLUMN));
-        });
+        softly.assertThat(actualProducts.getContent()).hasSize(2);
+        softly.assertThat(actualProducts.getPageable())
+                .extracting("pageSize")
+                .isEqualTo(2);
+        softly.assertThat(actualProducts.getPageable())
+                .extracting("pageNumber")
+                .isEqualTo(0);
+        softly.assertThat(actualProducts.getPageable().getSort().getOrderFor(NAME_COLUMN))
+                .isEqualTo(Sort.Order.asc(NAME_COLUMN));
+        softly.assertThat(actualProducts.getPageable().getSort().getOrderFor(ACTIVE_COLUMN))
+                .isEqualTo(Sort.Order.asc(ACTIVE_COLUMN));
     }
 
+    @Order(7)
     @Test
-    void shouldApplyDiscountForOneProductSuccess() {
+    void shouldApplyDiscountForOneProductSuccess(SoftAssertions softly) {
 
         final Product actualProduct = productService
                 .applyDiscount(FIRST_EXISTING_PRODUCT_ID_FROM_DB, TEST_DISCOUNT);
 
-        assertSoftly(softAssertions -> {
-            softAssertions.assertThat(actualProduct.getDiscount().getValue()).isEqualTo(TEST_DISCOUNT.getValue());
-            softAssertions.assertThat(actualProduct.getDiscount().getValidFrom())
-                    .isEqualTo(TEST_DISCOUNT.getValidFrom());
-            softAssertions.assertThat(actualProduct.getDiscount()
-                    .getValidUntil()).isEqualTo(TEST_DISCOUNT.getValidUntil());
-            softAssertions.assertThat(actualProduct.getDiscount().getCreatedAt()).isNotNull();
-            softAssertions.assertThat(actualProduct.getDiscount().getUpdatedAt()).isNotNull();
-        });
-
+        softly.assertThat(actualProduct.getDiscount())
+                .extracting("value")
+                .isEqualTo(TEST_DISCOUNT.getValue());
+        softly.assertThat(actualProduct.getDiscount())
+                .extracting("validFrom")
+                .isEqualTo(TEST_DISCOUNT.getValidFrom());
+        softly.assertThat(actualProduct.getDiscount())
+                .extracting("validUntil")
+                .isEqualTo(TEST_DISCOUNT.getValidUntil());
+        softly.assertThat(actualProduct.getDiscount())
+                .extracting("createdAt")
+                .isNotNull();
+        softly.assertThat(actualProduct.getDiscount())
+                .extracting("updatedAt")
+                .isNotNull();
     }
 
-
+    @Order(8)
     @Test
     void shouldApplyDiscountForOneProductWithNonExistIdFail() {
 
@@ -338,28 +228,28 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
     }
 
 
+    @Order(9)
     @Test
-    void shouldApplyDiscountForGroupOfProductsSuccess() {
+    void shouldApplyDiscountForGroupOfProductsSuccess(SoftAssertions softly) {
 
         final List<Product> actualProducts = productService
                 .applyDiscount(List.of(2L, 3L), TEST_DISCOUNT);
 
-        assertSoftly(softAssertions -> {
-            softAssertions.assertThat(actualProducts)
-                    .hasSize(2)
-                    .extracting(Product::getDiscount)
-                    .allSatisfy(discount -> {
-                        softAssertions.assertThat(discount).isNotNull();
-                        softAssertions.assertThat(discount.getValue()).isEqualTo(TEST_DISCOUNT.getValue());
-                        softAssertions.assertThat(discount.getValidFrom()).isEqualTo(TEST_DISCOUNT.getValidFrom());
-                        softAssertions.assertThat(discount.getValidUntil()).isEqualTo(TEST_DISCOUNT.getValidUntil());
-                        softAssertions.assertThat(discount.getCreatedAt()).isNotNull();
-                        softAssertions.assertThat(discount.getUpdatedAt()).isNotNull();
-                    });
-        });
+        softly.assertThat(actualProducts)
+                .hasSize(2)
+                .extracting(Product::getDiscount)
+                .allSatisfy(discount -> {
+                    softly.assertThat(discount).isNotNull();
+                    softly.assertThat(discount.getValue()).isEqualTo(TEST_DISCOUNT.getValue());
+                    softly.assertThat(discount.getValidFrom()).isEqualTo(TEST_DISCOUNT.getValidFrom());
+                    softly.assertThat(discount.getValidUntil()).isEqualTo(TEST_DISCOUNT.getValidUntil());
+                    softly.assertThat(discount.getCreatedAt()).isNotNull();
+                    softly.assertThat(discount.getUpdatedAt()).isNotNull();
+                });
     }
 
 
+    @Order(10)
     @Test
     void shouldApplyDiscountForGroupOfProductsWithEmptyIdsSuccess() {
 
@@ -369,11 +259,12 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
         assertThat(actualProducts).isEmpty();
     }
 
+    @Order(11)
     @Test
     void shouldDeactivateDiscountForOneProductSuccess() {
 
         final Discount testDiscount = Discount.builder()
-                .value((short) 10)
+                .value(10)
                 .validFrom(Instant.now())
                 .validUntil(Instant.now().plusSeconds(1000))
                 .build();
@@ -384,6 +275,7 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
         assertThat(actualProduct.getDiscount()).isNull();
     }
 
+    @Order(12)
     @Test
     void shouldDeactivateDiscountForOneProductFail() {
 
@@ -395,6 +287,7 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
                 .formatted(PRODUCT_DOMAIN_NAME, nonExistId));
     }
 
+    @Order(13)
     @Test
     void shouldDeactivateDiscountForGroupOfProductsSuccess() {
 
@@ -410,15 +303,17 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
                 });
     }
 
+
+    @Order(14)
     @Test
-    void shouldDeactivateDiscountForGroupOfProductsWithEmptyIdsSuccess() {
+    void shouldGetCurrencyByValueSuccess(SoftAssertions softly) {
 
-        productService.applyDiscount(Collections.emptyList(), TEST_DISCOUNT);
+        final Currency actualCurrency = productService.getCurrencyByValue(CurrencyValue.USD);
 
-        final List<Product> actualProducts = productService.
-                deactivateDiscount(Collections.emptyList());
-
-        assertThat(actualProducts).isEmpty();
+        softly.assertThat(actualCurrency.getId()).isNotNull();
+        softly.assertThat(actualCurrency.getValue()).isEqualTo(CurrencyValue.USD);
+        softly.assertThat(actualCurrency.getCreatedAt()).isNotNull();
+        softly.assertThat(actualCurrency.getValue()).isNotNull();
     }
 
 }

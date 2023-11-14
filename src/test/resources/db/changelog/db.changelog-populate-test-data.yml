@@ -1,0 +1,90 @@
+databaseChangeLog:
+  - changeSet:
+      id: 5
+      author: atauzhnianskyi
+      changes:
+        - insert:
+            tableName: currency
+            columns:
+              - column:
+                  name: value
+                  value: 'USD'
+        - insert:
+            tableName: currency
+            columns:
+              - column:
+                  name: value
+                  value: 'EUR'
+
+  - changeSet:
+      id: 6
+      author: atauzhnianskyi
+      changes:
+        - insert:
+            tableName: price
+            columns:
+              - column:
+                  name: value
+                  value: 100.10
+              - column:
+                  name: currency_id
+                  value: 1
+        - insert:
+            tableName: price
+            columns:
+              - column:
+                  name: value
+                  value: 200.00
+              - column:
+                  name: currency_id
+                  value: 1
+        - insert:
+            tableName: price
+            columns:
+              - column:
+                  name: value
+                  value: 250
+              - column:
+                  name: currency_id
+                  value: 1
+
+  - changeSet:
+      id: 7
+      author: atauzhnianskyi
+      changes:
+        - insert:
+            tableName: product
+            columns:
+              - column:
+                  name: name
+                  value: 'Product for Update'
+              - column:
+                  name: active
+                  value: true
+              - column:
+                  name: price_id
+                  value: 1
+        - insert:
+            tableName: product
+            columns:
+              - column:
+                  name: name
+                  value: 'Test product 2'
+              - column:
+                  name: active
+                  value: true
+              - column:
+                  name: price_id
+                  value: 2
+        - insert:
+            tableName: product
+            columns:
+              - column:
+                  name: name
+                  value: 'Test product 3'
+              - column:
+                  name: active
+                  value: true
+              - column:
+                  name: price_id
+                  value: 3

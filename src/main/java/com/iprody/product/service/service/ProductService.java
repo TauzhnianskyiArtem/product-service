@@ -1,6 +1,7 @@
 package com.iprody.product.service.service;
 
 import com.iprody.product.service.domain.Currency;
+import com.iprody.product.service.domain.CurrencyValue;
 import com.iprody.product.service.domain.Discount;
 import com.iprody.product.service.domain.Product;
 import com.iprody.product.service.domain.ProductFilter;
@@ -46,47 +47,14 @@ public class ProductService {
     private SortingProductHelper sortingProductHelper;
 
     /**
-     * Create a new Product entity to the database.
+     * Save a Product entity to the database.
      *
-     * @param createProduct to be saved as a Product entity.
+     * @param product to be saved as a Product entity.
      * @return ProductReadDto The saved Product entity as a ProductReadDto object.
      */
     @Transactional
-    public Product createProduct(Product createProduct) {
-        final Currency currency = currencyRepository.getByValue(createProduct.getPrice().getCurrency().getValue());
-        createProduct.getPrice().setCurrency(currency);
-        return productRepository.save(createProduct);
-    }
-
-    /**
-     * Update an existing Product entity if the provided id is found.
-     *
-     * @param id            The Product id to found Product.
-     * @param editedProduct to be updated in database.
-     * @return Product The updated Product entity.
-     * @throws ResourceNotFoundException if product not found by id.
-     */
-    @Transactional
-    public Product updateProduct(long id, Product editedProduct) {
-        return productRepository.findById(id)
-                .map(product -> {
-                    if (editedProduct.getName() != null) {
-                        product.setName(editedProduct.getName());
-                    }
-
-                    product.setActive(editedProduct.isActive());
-
-                    if (editedProduct.getPrice() != null) {
-                        final Currency currency = currencyRepository
-                                .getByValue(editedProduct.getPrice().getCurrency().getValue());
-                        product.getPrice().setCurrency(currency);
-                        if (editedProduct.getPrice().getValue() != null) {
-                            product.getPrice().setValue(editedProduct.getPrice().getValue());
-                        }
-                    }
-                    return productRepository.save(product);
-                })
-                .orElseThrow(() -> new ResourceNotFoundException(PRODUCT_DOMAIN_NAME, id));
+    public Product saveProduct(Product product) {
+        return productRepository.save(product);
     }
 
     /**
@@ -190,13 +158,25 @@ public class ProductService {
     }
 
     /**
+     * Find Currency entity by value.
+     *
+     * @param value The Currency value id to found Currency.
+     * @return Currency The found Currency entity.
+     */
+    public Currency getCurrencyByValue(CurrencyValue value) {
+        return currencyRepository.getByValue(value);
+    }
+
+    /**
      * Get product specification for filtering products.
      *
      * @param productFilter The ProductFilter has fields for filtering.
      * @return Specification<Product> The created specification.
      */
     private Specification<Product> getProductSpecification(ProductFilter productFilter) {
-        Specification<Product> spec = Specification.where(null);
+        Specification<Product> spec = (root, query, criteriaBuilder) ->
+                criteriaBuilder.isTrue(criteriaBuilder.literal(true));
+
         if (productFilter.name() != null) {
             spec = spec.and(ProductFilterSpecification.nameLike(productFilter.name()));
         }
@@ -219,5 +199,4 @@ public class ProductService {
         pageRequest = pageRequest.withSort(sort);
         return pageRequest;
     }
-
 }

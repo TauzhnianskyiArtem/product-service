@@ -7,10 +7,10 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 /**
  * Currency
@@ -25,13 +25,13 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@SuperBuilder
 @Entity
 @Table
 public class Currency extends AbstractBaseEntity {
 
     /**
-     * Currency value. This value follow ISO 4217.
+     * Currency value. This value follows ISO 4217.
      */
     @Column(nullable = false, unique = true)
     @Enumerated(EnumType.STRING)

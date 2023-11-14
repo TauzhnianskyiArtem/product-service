@@ -1,17 +1,8 @@
-FROM gradle:8.4.0-jdk21 AS builder
+FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 
-COPY build.gradle .
-COPY settings.gradle .
-COPY src ./src
-COPY config ./config
-
-RUN gradle build
-
-FROM amazoncorretto:21-alpine
-
-COPY --from=builder app/build/libs/*-exec.jar *-exec.jar
+COPY build/libs/product-service-0.0.1-SNAPSHOT-exec.jar product-service-0.0.1-SNAPSHOT-exec.jar
 
 EXPOSE 8080 8443
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "product-service-0.0.1-SNAPSHOT-exec.jar"]
