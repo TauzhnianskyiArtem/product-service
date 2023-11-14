@@ -1,17 +1,17 @@
 package com.iprody.product.service.rest.controller;
 
 import com.iprody.product.service.domain.ProductFilter;
+import com.iprody.product.service.logging.aspect.BusinessOpsLogging;
 import com.iprody.product.service.rest.adapter.ProductServiceAdapter;
-import com.iprody.product.service.rest.dto.DiscountRequestDto;
 import com.iprody.product.service.rest.dto.DiscountForProductsRequestDto;
+import com.iprody.product.service.rest.dto.DiscountRequestDto;
 import com.iprody.product.service.rest.dto.ProductCreateRequestDto;
 import com.iprody.product.service.rest.dto.ProductResponseDto;
 import com.iprody.product.service.rest.dto.ProductUpdateRequestDto;
-import com.iprody.product.service.rest.validation.group.CreateActionGroup;
 import io.swagger.v3.oas.annotations.Operation;
-import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,6 +28,7 @@ import java.util.List;
 /**
  * ProductControllerV1 handles HTTP requests related to product operations.
  */
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/products")
 @RequiredArgsConstructor
@@ -45,25 +46,25 @@ public class ProductController {
      * @param productCreateRequestDto The data for creating or editing a product.
      * @return The created or updated product details.
      */
+    @BusinessOpsLogging
     @Operation(summary = "Create a new product")
     @PostMapping
-    public ProductResponseDto create(@Validated({Default.class, CreateActionGroup.class})
-                                     @RequestBody ProductCreateRequestDto productCreateRequestDto) {
+    public ProductResponseDto create(@Validated @RequestBody ProductCreateRequestDto productCreateRequestDto) {
         return productServiceAdapter.createProduct(productCreateRequestDto);
     }
 
     /**
      * Update a product by its ID.
      *
-     * @param id                The ID of the product to be updated.
+     * @param id                      The ID of the product to be updated.
      * @param productUpdateRequestDto The updated data for the product.
      * @return The updated product.
      */
+    @BusinessOpsLogging
     @Operation(summary = "Update a product")
     @PutMapping("/{id}")
     public ProductResponseDto update(@PathVariable long id,
                                      @Validated @RequestBody ProductUpdateRequestDto productUpdateRequestDto) {
-
         productUpdateRequestDto.setId(id);
         return productServiceAdapter.updateProduct(productUpdateRequestDto);
     }
@@ -74,6 +75,7 @@ public class ProductController {
      * @param id The ID of the product to be found.
      * @return The product details identified by the ID.
      */
+    @BusinessOpsLogging
     @Operation(summary = "Find a product by ID")
     @GetMapping("/{id}")
     public ProductResponseDto findById(@PathVariable long id) {
@@ -86,6 +88,7 @@ public class ProductController {
      * @param productFilter The criteria for filtering products.
      * @return A page containing products that meet the filtering criteria.
      */
+    @BusinessOpsLogging
     @Operation(summary = "Find all products by the provided filtering criteria")
     @GetMapping
     public Page<ProductResponseDto> findAll(@RequestBody ProductFilter productFilter) {
@@ -99,6 +102,7 @@ public class ProductController {
      * @param discountRequestDto The discount details to be applied.
      * @return The product details after applying the discount.
      */
+    @BusinessOpsLogging
     @Operation(summary = "Apply discount to a product")
     @PostMapping("/{id}/discounts")
     public ProductResponseDto applyDiscount(@PathVariable long id,
@@ -112,6 +116,7 @@ public class ProductController {
      * @param id The ID of the product to deactivate the discount.
      * @return The product details after deactivating the discount.
      */
+    @BusinessOpsLogging
     @Operation(summary = "Deactivate discount for a product")
     @DeleteMapping("/{id}/discounts")
     public ProductResponseDto deactivateDiscount(@PathVariable long id) {
@@ -124,6 +129,7 @@ public class ProductController {
      * @param discountCreates The details for applying discounts to multiple products.
      * @return A list of product details after applying the discounts.
      */
+    @BusinessOpsLogging
     @Operation(summary = "Apply discount to a group of products")
     @PostMapping("/discounts")
     public List<ProductResponseDto> applyDiscountForGroupOfProducts(
@@ -137,6 +143,7 @@ public class ProductController {
      * @param ids The IDs of products for which discounts will be deactivated.
      * @return A list of product details after deactivating discounts for the specified products.
      */
+    @BusinessOpsLogging
     @Operation(summary = "Deactivate discount for a group of products")
     @DeleteMapping("/discounts")
     public List<ProductResponseDto> deactivateDiscountForGroupOfProducts(@RequestBody List<Long> ids) {

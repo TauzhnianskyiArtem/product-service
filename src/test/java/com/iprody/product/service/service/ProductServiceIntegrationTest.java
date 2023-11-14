@@ -31,6 +31,7 @@ import static com.iprody.product.service.service.ProductService.PRODUCT_DOMAIN_N
 import static com.iprody.product.service.util.SortingProductProperties.ACTIVE;
 import static com.iprody.product.service.util.SortingProductProperties.NAME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -93,7 +94,6 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
                 .isEqualTo(TEST_PRODUCT_CREATE.getPrice().getValue());
         softly.assertThat(actualProduct.getCreatedAt()).isNotNull();
         softly.assertThat(actualProduct.getUpdatedAt()).isNotNull();
-
     }
 
     @Order(2)
@@ -122,8 +122,9 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
         final ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
                 productService.findById(nonExistId));
 
-        assertThat(exception.getMessage()).isEqualTo(NOT_FOUND_WITH_ID_MESSAGE
-                .formatted(PRODUCT_DOMAIN_NAME, nonExistId));
+        assertThatThrownBy(() -> productService.findById(nonExistId))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage(NOT_FOUND_WITH_ID_MESSAGE.formatted(PRODUCT_DOMAIN_NAME, nonExistId));
     }
 
 
@@ -220,11 +221,10 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
     void shouldApplyDiscountForOneProductWithNonExistIdFail() {
 
         final long nonExistId = 100L;
-        final ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
-                productService.applyDiscount(nonExistId, TEST_DISCOUNT));
+        assertThatThrownBy(() -> productService.applyDiscount(nonExistId, TEST_DISCOUNT))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage(NOT_FOUND_WITH_ID_MESSAGE.formatted(PRODUCT_DOMAIN_NAME, nonExistId));
 
-        assertThat(exception.getMessage()).isEqualTo(NOT_FOUND_WITH_ID_MESSAGE
-                .formatted(PRODUCT_DOMAIN_NAME, nonExistId));
     }
 
 
@@ -280,11 +280,9 @@ class ProductServiceIntegrationTest extends AbstractIntegrationTestBase {
     void shouldDeactivateDiscountForOneProductFail() {
 
         final long nonExistId = 100L;
-        final ResourceNotFoundException exception = assertThrows(ResourceNotFoundException.class, () ->
-                productService.deactivateDiscount(nonExistId));
-
-        assertThat(exception.getMessage()).isEqualTo(NOT_FOUND_WITH_ID_MESSAGE
-                .formatted(PRODUCT_DOMAIN_NAME, nonExistId));
+        assertThatThrownBy(() -> productService.deactivateDiscount(nonExistId))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage(NOT_FOUND_WITH_ID_MESSAGE.formatted(PRODUCT_DOMAIN_NAME, nonExistId));
     }
 
     @Order(13)

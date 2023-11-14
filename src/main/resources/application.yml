@@ -1,4 +1,6 @@
 spring:
+  application:
+    name: product-service
   config:
     import: optional:file:.env[.properties]
   datasource:
@@ -8,6 +10,11 @@ spring:
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+management:
+  tracing:
+    enabled: true
+    sampling.probability: 1.0
+
 
 springdoc:
   show-actuator: true

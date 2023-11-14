@@ -7,7 +7,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-@SpringBootTest(classes = ProductServiceApplication.class)
+@SpringBootTest(classes = ObservationTestConfiguration.class)
 @ActiveProfiles("test")
 public abstract class AbstractIntegrationTestBase {
 

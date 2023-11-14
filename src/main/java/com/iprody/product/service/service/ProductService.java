@@ -9,6 +9,7 @@ import com.iprody.product.service.repository.CurrencyRepository;
 import com.iprody.product.service.repository.ProductRepository;
 import com.iprody.product.service.exception.ResourceNotFoundException;
 import com.iprody.product.service.util.SortingProductHelper;
+import io.micrometer.observation.annotation.Observed;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.domain.Page;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Observed(name = "ProductService")
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
