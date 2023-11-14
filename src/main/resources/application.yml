@@ -8,6 +8,10 @@ spring:
     driver-class-name: org.postgresql.Driver
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
+
+springdoc:
+  show-actuator: true
+
 server:
   port: 8080
   error:
