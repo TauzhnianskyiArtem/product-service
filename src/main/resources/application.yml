@@ -16,6 +16,12 @@ management:
     sampling.probability: 1.0
 
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: liquibase, health
+
 springdoc:
   show-actuator: true
 
