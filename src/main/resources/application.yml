@@ -29,3 +29,13 @@ server:
   port: 8080
   error:
     include-message: always
+
+  ssl:
+    enabled: true
+    key-store-type: PKCS12
+    key-store: classpath:security/dev_product_service_keystore.p12
+    key-store-password: securepassword
+    protocol: TLS
+    enabled-protocols: TLSv1.2
+    trust-store: classpath:security/dev_product_service_truststore.p12
+    trust-store-password: securepassword
