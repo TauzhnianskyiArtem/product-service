@@ -14,9 +14,6 @@ management:
   tracing:
     enabled: true
     sampling.probability: 1.0
-
-
-management:
   endpoints:
     web:
       exposure:
@@ -29,7 +26,6 @@ server:
   port: 8080
   error:
     include-message: always
-
   ssl:
     enabled: true
     key-store-type: PKCS12
