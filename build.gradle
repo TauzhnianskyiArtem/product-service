@@ -58,13 +58,22 @@ jar {
     enabled = false
 }
 
+ext {
+    isTest = project.hasProperty('profile') ? project.property('profile') == 'test' : false
+}
+
 bootJar {
     archiveClassifier.set("exec")
+
+    if(!isTest) {
+        exclude '**/changeset/test/**'
+    }
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
+
 
 publishing {
     publications {

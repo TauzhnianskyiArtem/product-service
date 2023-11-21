@@ -35,3 +35,15 @@ server:
     enabled-protocols: TLSv1.2
     trust-store: classpath:security/dev_product_service_truststore.p12
     trust-store-password: securepassword
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  jpa:
+    properties.hibernate:
+      show_sql: true
+      format_sql: true
+  liquibase:
+    change-log: classpath:/db/changelog/changeset/test/db.changelog-master-test.yml
