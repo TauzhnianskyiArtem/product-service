@@ -1,0 +1,5 @@
+product-service:
+  ssl:
+    trust-store: classpath:security/dev_product_service_truststore.p12
+    trust-store-password: product_service_dev
+    version: V_1_2

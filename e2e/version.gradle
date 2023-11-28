@@ -1,0 +1,9 @@
+ext {
+    versions = [
+            'lombok'          : '1.18.30',
+            'springdocOpenApi': '2.2.0',
+            'jacksonNullable' : '0.2.6',
+            'cucumber'        : '7.12.1',
+            'httpclient5'     : '5.2.1'
+    ]
+}
