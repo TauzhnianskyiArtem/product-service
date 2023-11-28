@@ -19,14 +19,18 @@ public class HttpClientExceptionHandler {
      *
      * @param request - accepts lambda function for call Api.
      *                Accepts Supplier so that the service api call is executed in this method
-     * @return ResponseEntity with body (ResponseDto or ApiError)
+     * @param operationType - product operation type
+     * @return TestContext with ResponseEntity and ProductOperationType
      */
-    public ResponseEntity<?> sendRequest(Supplier<ResponseEntity<?>> request) {
+    public TestContext sendRequest(Supplier<ResponseEntity<?>> request, ProductOperationType operationType) {
         try {
-            return request.get();
+            return new TestContext(request.get(), operationType);
         } catch (RestClientResponseException ex) {
             final var apiError = ex.getResponseBodyAs(ApiErrorResponse.class);
-            return ResponseEntity.status(ex.getStatusCode()).body(apiError);
+            return new TestContext(
+                    ResponseEntity.status(ex.getStatusCode()).body(apiError),
+                    ProductOperationType.ERROR
+            );
         }
     }
 }

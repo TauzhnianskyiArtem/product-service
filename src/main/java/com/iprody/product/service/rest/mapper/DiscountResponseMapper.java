@@ -14,7 +14,7 @@ public class DiscountResponseMapper implements Mapper<Discount, DiscountResponse
     @Override
     public DiscountResponseDto map(Discount discount) {
         if (discount == null) {
-            return null;
+            return DiscountResponseDto.builder().build();
         }
 
         return DiscountResponseDto.builder()

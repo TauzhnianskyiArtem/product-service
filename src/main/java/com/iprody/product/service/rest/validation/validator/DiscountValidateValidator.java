@@ -11,6 +11,6 @@ import jakarta.validation.ConstraintValidatorContext;
 public class DiscountValidateValidator implements ConstraintValidator<DiscountValidate, DiscountRequestDto>  {
     @Override
     public final boolean isValid(DiscountRequestDto value, ConstraintValidatorContext context) {
-        return value.until() != null && value.until().isAfter(value.from());
+        return value.until() != null && value.from() != null && value.until().isAfter(value.from());
     }
 }

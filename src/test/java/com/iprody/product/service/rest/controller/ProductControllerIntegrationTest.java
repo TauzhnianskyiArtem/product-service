@@ -433,7 +433,9 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpectAll(
                         jsonPath("$.id").value(FIRST_EXISTING_PRODUCT_DTO_FROM_DB.id()),
-                        jsonPath("$.discount").isEmpty()
+                        jsonPath("$.discount.value").value(0),
+                        jsonPath("$.discount.from").isEmpty(),
+                        jsonPath("$.discount.until").isEmpty()
                 );
     }
 
@@ -470,8 +472,12 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpectAll(
                         jsonPath("$", hasSize(2)),
-                        jsonPath("$[0].discount").isEmpty(),
-                        jsonPath("$[1].discount").isEmpty()
+                        jsonPath("$[0].discount.value").value(0),
+                        jsonPath("$[0].discount.from").isEmpty(),
+                        jsonPath("$[0].discount.until").isEmpty(),
+                        jsonPath("$[1].discount.value").value(0),
+                        jsonPath("$[1].discount.from").isEmpty(),
+                        jsonPath("$[1].discount.until").isEmpty()
                 );
     }
 }
