@@ -58,6 +58,12 @@ openApiGenerate {
             generateClientAsBean          : "true",
             additionalModelTypeAnnotations: "@lombok.AllArgsConstructor; @lombok.Builder"
     ])
+    typeMappings = [
+            Date: "Instant"
+    ]
+    importMappings = [
+            "java.util.Date": "java.time.Instant"
+    ]
 }
 
 compileJava.dependsOn tasks.named("openApiGenerate")
