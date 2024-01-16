@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iprody.product.service.AbstractIntegrationTestBase;
 import com.iprody.product.service.domain.CurrencyValue;
 import com.iprody.product.service.domain.Discount;
-import com.iprody.product.service.domain.ProductFilter;
 import com.iprody.product.service.rest.dto.CurrencyResponseDto;
 import com.iprody.product.service.rest.dto.DiscountForProductsRequestDto;
 import com.iprody.product.service.rest.dto.DiscountRequestDto;
@@ -12,6 +11,7 @@ import com.iprody.product.service.rest.dto.PriceResponseDto;
 import com.iprody.product.service.rest.dto.ProductCreateRequestDto;
 import com.iprody.product.service.rest.dto.ProductResponseDto;
 import com.iprody.product.service.service.ProductService;
+import com.iprody.product.service.util.SortingProductProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.junit.jupiter.api.Test;
@@ -31,6 +31,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.iprody.product.service.util.SortingProductProperties.NAME;
@@ -281,26 +282,33 @@ class ProductControllerIntegrationTest extends AbstractIntegrationTestBase {
     @SneakyThrows
     @Test
     void shouldFindAllProductsSuccess() {
-        final ProductFilter productFilter = ProductFilter.builder()
-                .name("Test")
-                .active(true)
-                .sort(new ProductFilter.SortRequest(Set.of(NAME), Sort.Direction.DESC))
-                .page(new ProductFilter.PageRequest(0, 1))
-                .build();
+        final String name = "Test";
+        final boolean active = true;
+        final Set<SortingProductProperties> sortBy = Set.of(NAME);
+        final Sort.Direction directionSort = Sort.Direction.DESC;
+        final int pageNumber = 0;
+        final int pageSize = 1;
 
         mockMvc.perform(
                         get(URL_PRODUCT_CONTROLLER)
-                                .content(objectMapper.writeValueAsString(productFilter))
+                                .param("name", name)
+                                .param("active", String.valueOf(active))
+                                .param("sortBy", sortBy.stream().map(Enum::name)
+                                        .collect(Collectors.joining(",")))
+                                .param("directionSort", directionSort.name())
+                                .param("pageNumber", String.valueOf(pageNumber))
+                                .param("pageSize", String.valueOf(pageSize))
                                 .contentType(MediaType.APPLICATION_JSON)
                 )
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpectAll(
                         jsonPath("$.content", hasSize(1)),
-                        jsonPath("$.pageable.pageSize").value(1),
-                        jsonPath("$.pageable.pageNumber").value(0)
+                        jsonPath("$.pageable.pageSize").value(pageSize),
+                        jsonPath("$.pageable.pageNumber").value(pageNumber)
                 );
     }
+
 
     @SneakyThrows
     @Test

@@ -13,7 +13,7 @@
         <file>logs/${appName}.log</file>
         <encoder>
             <pattern>
-                trace-id=%mdc{traceId} span-id=%mdc{spanId} %d{HH:mm:ss.SSS}[%thread] %highlight(%-5level) %cyan(%logger{36}) -%kvp- %msg%n
+                trace-id=%mdc{traceId} span-id=%mdc{spanId} %d{HH:mm:ss.SSS}[%thread] %-5level %logger{36} -%kvp- %msg%n
             </pattern>
         </encoder>
 

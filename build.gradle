@@ -37,6 +37,7 @@ dependencies {
     implementation platform("io.micrometer:micrometer-tracing-bom:${versions.micrometerTracing}")
     implementation 'io.micrometer:micrometer-tracing'
     implementation 'io.micrometer:micrometer-tracing-bridge-otel'
+    runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     runtimeOnly 'org.postgresql:postgresql'
@@ -65,7 +66,7 @@ ext {
 bootJar {
     archiveClassifier.set("exec")
 
-    if(!isTest) {
+    if (!isTest) {
         exclude '**/changeset/test/**'
     }
 }
