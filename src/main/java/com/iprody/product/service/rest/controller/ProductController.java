@@ -8,11 +8,13 @@ import com.iprody.product.service.rest.dto.DiscountRequestDto;
 import com.iprody.product.service.rest.dto.ProductCreateRequestDto;
 import com.iprody.product.service.rest.dto.ProductResponseDto;
 import com.iprody.product.service.rest.dto.ProductUpdateRequestDto;
+import com.iprody.product.service.util.SortingProductProperties;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Sort;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,9 +23,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * ProductControllerV1 handles HTTP requests related to product operations.
@@ -85,15 +89,37 @@ public class ProductController {
     /**
      * Find all products based on the provided filtering criteria.
      *
-     * @param productFilter The criteria for filtering products.
+     * @param name          Optional name filter for products.
+     * @param active        Optional active status filter for products.
+     * @param sortBy        Optional set of properties to sort the products by.
+     * @param directionSort Optional direction for sorting (ASC or DESC).
+     * @param pageNumber    The page number to retrieve, with a default of 0 if not provided.
+     * @param pageSize      The size of the page to retrieve, with a default of 10 if not provided.
      * @return A page containing products that meet the filtering criteria.
      */
     @BusinessOpsLogging
     @Operation(summary = "Find all products by the provided filtering criteria")
     @GetMapping
-    public Page<ProductResponseDto> findAll(@RequestBody ProductFilter productFilter) {
+    public Page<ProductResponseDto> findAll(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Set<SortingProductProperties> sortBy,
+            @RequestParam(required = false) Sort.Direction directionSort,
+            @RequestParam(required = false) int pageNumber,
+            @RequestParam(required = false) int pageSize) {
+
+        final ProductFilter.SortRequest sortRequest = new ProductFilter.SortRequest(sortBy, directionSort);
+        final ProductFilter.PageRequest pageRequest = new ProductFilter.PageRequest(pageNumber, pageSize);
+        final ProductFilter productFilter = ProductFilter.builder()
+                .name(name)
+                .active(active)
+                .sort(sortRequest)
+                .page(pageRequest)
+                .build();
+
         return productServiceAdapter.findAll(productFilter);
     }
+
 
     /**
      * Apply a discount to a product identified by its ID.
